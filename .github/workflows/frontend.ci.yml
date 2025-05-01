@@ -8,6 +8,9 @@ on:
 
 jobs:
   install:
+    defaults:
+      run:
+        working-directory: frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,6 +27,9 @@ jobs:
 
   test:
     needs: install
+    defaults:
+      run:
+        working-directory: frontend
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -51,6 +57,9 @@ jobs:
 
   lint:
     needs: install
+    defaults:
+      run:
+        working-directory: frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
