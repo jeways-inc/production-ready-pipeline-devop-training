@@ -1,23 +1,69 @@
 name: CI Pipeline
+
 on:
   push:
     branches: [trunk]
   pull_request:
     branches: [trunk]
+
 jobs:
-  build:
+  install:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3 # Check out the repository code
-      - name: Set up Node.js # Install Node.js environment
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' # Use Node.js 20 for consistency
-      - name: Cache dependencies # Cache node_modules to speed up builds
+      - uses: actions/checkout@v3
+      - name: Cache node modules
         uses: actions/cache@v3
         with:
-          path: ~/.npm # Cache npm’s global cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }} # Key based on OS and package-lock.json
-      - run: npm ci # Install dependencies reliably using package-lock.json
-      - run: npm test # Run tests defined in package.json
-      - run: npm run lint # Run ESLint to ensure code quality
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - run: npm ci
+
+  test:
+    needs: install
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        database: [postgres, mysql]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - run: npm ci
+      - run: npm test
+
+  lint:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - run: npm ci
+      - run: npm run lint
